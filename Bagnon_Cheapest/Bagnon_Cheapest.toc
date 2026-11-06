@@ -1,0 +1,12 @@
+## Interface: 16001
+## Title: Bagnon |cffffffffCheapest|r
+## Notes: Finds the lowest vendor-value stack in your bags so you can free a slot. /bcheap
+## Version: 1.0.0
+## Category: Bags & Inventory
+## Group: BagBrother
+## Dependencies: Bagnon
+## SavedVariables: Bagnon_CheapestDB
+
+Logic.lua
+Core.lua
+UI.lua
