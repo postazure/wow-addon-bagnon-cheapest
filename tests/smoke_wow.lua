@@ -29,6 +29,10 @@ end
 
 function Methods.SetScript(self, k, f) self.scripts[k] = f end
 function Methods.GetScript(self, k) return self.scripts[k] end
+function Methods.HookScript(self, k, f)
+	local prev = self.scripts[k]
+	self.scripts[k] = function(...) if prev then prev(...) end; f(...) end
+end
 function Methods.Show(self) self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
 function Methods.Hide(self) self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
 function Methods.SetShown(self, v) if v then self:Show() else self:Hide() end end
@@ -409,6 +413,24 @@ test('shift-click destroys a common stack directly', function()
 	eq(bags[e.bag][e.slot], nil)
 	eq(bags[0][1] ~= nil and bags[1][1] ~= nil, true, 'other stacks untouched')
 	fill(); ns.Core.Scan()
+end)
+
+test('shift-right-click skips the target until the bag frame closes', function()
+	reset()
+	local b = _G.Bagnon_CheapestButton
+	local first = ns.Core.entries[1].itemID
+	b.scripts.OnClick(b, 'RightButton')
+	eq(ns.Core.entries[1].itemID, first, 'plain right-click does nothing')
+	shift = true; b.scripts.OnClick(b, 'RightButton'); shift = false
+	eq(log.deleted, 0)
+	eq(Bagnon_CheapestDB.excluded[first], nil, 'not saved')
+	for _, e in ipairs(ns.Core.entries) do eq(e.itemID ~= first, true, 'skipped item gone') end
+	eq(b.icon.texture, 'icon' .. ns.Core.entries[1].itemID, 'button moved to next item')
+	b.scripts.OnEnter(b)
+	eq(table.concat(GameTooltip.lines, ' '):find('Skip until bags close', 1, true) ~= nil, true)
+	b.scripts.OnLeave(b); runTimers()
+	invFrame:Hide(); invFrame:Show()
+	eq(ns.Core.entries[1].itemID, first, 'back after closing the bags')
 end)
 
 test('aborts when count changed since display', function()

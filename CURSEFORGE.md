@@ -4,7 +4,7 @@ Bagnon Cheapest adds a button to your Bagnon bag window that finds your lowest-v
 
 **Features**
 - Hover to see the next four candidates. Every other slot darkens so the target stands out.
-- Shift-click the button to destroy that stack, or sell it if a vendor is open.
+- Shift-click the button to destroy that stack, or sell it if a vendor is open. Shift-right-click skips it until you close your bags.
 - Click the button to open a list of every candidate. Right-click an item to exclude it for good.
 - Exclusions are shared across all your characters.
 

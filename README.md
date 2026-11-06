@@ -16,6 +16,7 @@ A [Bagnon](https://www.curseforge.com/wow/addons/bagnon) plugin for WoW Forever.
 |---|---|---|
 | Bag button | Click | Open or close the list |
 | Bag button | Shift-click | Destroy (or sell) the cheapest stack |
+| Bag button | Shift-right-click | Skip that item until you close your bags |
 | List | Left-click | Destroy (or sell) that stack |
 | List | Right-click | Exclude that item |
 | Excluded list | Right-click | Restore that item |

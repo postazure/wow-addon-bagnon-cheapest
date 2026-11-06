@@ -297,6 +297,7 @@ local function buttonOnEnter(self)
 
 	GameTooltip:AddLine(' ')
 	addActionHint('|LS')
+	GameTooltip:AddLine(clickHint('|RS Skip until bags close'), 0.5, 0.8, 1)
 	GameTooltip:AddLine(clickHint('|L Show list'), 0.5, 0.8, 1)
 	GameTooltip:Show()
 
@@ -311,8 +312,12 @@ local function buttonOnLeave(self)
 	UI.ClearHighlight()
 end
 
-local function buttonOnClick(self)
-	if not IsShiftKeyDown() then
+local function buttonOnClick(self, mouse)
+	if mouse == 'RightButton' then
+		if IsShiftKeyDown() then
+			Core.Skip(Core.entries[1])
+		end
+	elseif not IsShiftKeyDown() then
 		UI.TogglePanel()
 	elseif viewingOtherCharacter() then
 		Core.Print('Switch Bagnon back to your current character first.')
@@ -323,7 +328,7 @@ end
 
 local function createButton(parent)
 	local b = CreateFrame('Button', 'Bagnon_CheapestButton', parent, 'BagnonButtonTemplate')
-	b:RegisterForClicks('LeftButtonUp')
+	b:RegisterForClicks('LeftButtonUp', 'RightButtonUp')
 	b.icon = b.Icon
 	b.icon:SetTexture(EMPTY_ICON)
 
@@ -381,6 +386,10 @@ local function installBagnonHook()
 			end
 		end
 		if self.id == 'inventory' then
+			if not self.cheapestHooked then
+				self.cheapestHooked = true
+				self:HookScript('OnHide', Core.ClearSkipped)
+			end
 			out[#out + 1] = UI.GetButton(self)
 			C_Timer.After(0, function()
 				if not UI.hovering then UI.ApplyBaseline() end
@@ -627,6 +636,9 @@ local function render()
 	else
 		footer = #list .. ' items'
 		if Core.pending > 0 then footer = footer .. ', ' .. Core.pending .. ' loading' end
+		local skipped = 0
+		for _ in pairs(Core.skipped) do skipped = skipped + 1 end
+		if skipped > 0 then footer = footer .. ', ' .. skipped .. ' skipped' end
 		if UI.inCombat then
 			footer = footer .. '  |cffff5555In combat: disabled|r'
 		elseif Core.VendorState() == 'sell' then

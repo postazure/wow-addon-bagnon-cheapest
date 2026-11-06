@@ -12,8 +12,13 @@ local QUEST_ITEM_CLASS = Enum and Enum.ItemClass and Enum.ItemClass.Questitem or
 
 Core.entries = {}
 Core.pending = 0
+Core.skipped = {} -- item IDs hidden until the bags next close
 local waiting = {} -- item IDs requested with RequestLoadItemDataByID
 local scanQueued = false
+
+local hidden = setmetatable({}, { __index = function(_, itemID)
+	return Bagnon_CheapestDB.excluded[itemID] or Core.skipped[itemID]
+end })
 
 
 --[[ Helpers ]]--
@@ -105,7 +110,7 @@ function Core.Scan()
 		end
 	end
 
-	Core.entries, Core.pending = Logic.BuildEntries(records, Bagnon_CheapestDB.excluded)
+	Core.entries, Core.pending = Logic.BuildEntries(records, hidden)
 	if ns.UI then
 		ns.UI.Refresh()
 	end
@@ -131,6 +136,21 @@ end
 
 function Core.Restore(itemID)
 	if Logic.Restore(Bagnon_CheapestDB, itemID) then
+		Core.Scan()
+	end
+end
+
+function Core.Skip(entry)
+	if entry and not Core.skipped[entry.itemID] then
+		Core.skipped[entry.itemID] = true
+		Core.Print('Skipping', entry.link or entry.name or entry.itemID, 'until you close your bags.')
+		Core.Scan()
+	end
+end
+
+function Core.ClearSkipped()
+	if next(Core.skipped) then
+		Core.skipped = {}
 		Core.Scan()
 	end
 end
@@ -172,7 +192,7 @@ local function precheck(entry, verb)
 		Core.Print('Your cursor is already holding an item. Put it down first.')
 		return nil
 	end
-	if Bagnon_CheapestDB.excluded[entry.itemID] then
+	if hidden[entry.itemID] then
 		Core.Scan()
 		return nil
 	end
