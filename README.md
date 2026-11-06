@@ -45,6 +45,12 @@ pip install lupa
 python tests/run.py
 ```
 
+## Releasing
+
+Pushing an annotated `v<version>` tag on `main` runs the Release workflow. It checks the tag against the `.toc` version and `CHANGELOG.md`, then tests, zips, creates the GitHub release and uploads to CurseForge. The tag's message is the release notes. The release skill in `.claude/skills/release` walks through it.
+
+The CurseForge upload is skipped until the repo has a `CURSEFORGE_TOKEN` secret and a `CURSEFORGE_PROJECT_ID` variable.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).

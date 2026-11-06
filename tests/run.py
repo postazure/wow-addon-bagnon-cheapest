@@ -43,4 +43,8 @@ print('--- tests/check_methods.py')
 if subprocess.call([sys.executable, os.path.join('tests', 'check_methods.py')]) != 0:
     ok = False
 
+print('--- tests/test_release.py')
+if subprocess.call([sys.executable, os.path.join('tests', 'test_release.py')]) != 0:
+    ok = False
+
 sys.exit(0 if ok else 1)
