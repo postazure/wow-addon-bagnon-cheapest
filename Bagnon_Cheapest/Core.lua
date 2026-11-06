@@ -143,7 +143,6 @@ end
 function Core.Skip(entry)
 	if entry and not Core.skipped[entry.itemID] then
 		Core.skipped[entry.itemID] = true
-		Core.Print('Skipping', entry.link or entry.name or entry.itemID, 'until you close your bags.')
 		Core.Scan()
 	end
 end
