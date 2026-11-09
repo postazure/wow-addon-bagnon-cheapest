@@ -11,7 +11,13 @@ local SCAN_DELAY = 0.15
 local QUEST_ITEM_CLASS = Enum and Enum.ItemClass and Enum.ItemClass.Questitem or 12
 
 Core.entries = {}
+Core.buttonEntries = {} -- the entries within the button's quality limit
 Core.pending = 0
+
+Core.DEFAULTS = {
+	anyQuality = false,   -- false: grey items first, then by value
+	buttonMaxQuality = 0, -- highest quality the bag button offers (0 = Poor)
+}
 Core.skipped = {} -- item IDs hidden until the bags next close
 local waiting = {} -- item IDs requested with RequestLoadItemDataByID
 local scanQueued = false
@@ -44,6 +50,16 @@ function Core.QualityColor(quality)
 		if r then return r, g, b, hex and ('|c' .. hex) end
 	end
 	return 1, 1, 1, '|cffffffff'
+end
+
+local QUALITY_NAMES = { [0] = 'Poor', 'Common', 'Uncommon', 'Rare', 'Epic' }
+Core.MAX_BUTTON_QUALITY = #QUALITY_NAMES
+
+-- "Poor", "Common"... in the quality's colour.
+function Core.QualityName(quality)
+	local name = _G['ITEM_QUALITY' .. quality .. '_DESC'] or QUALITY_NAMES[quality] or tostring(quality)
+	local _, _, _, hex = Core.QualityColor(quality)
+	return (hex or '|cffffffff') .. name .. '|r'
 end
 
 function Core.InventoryBags()
@@ -110,7 +126,9 @@ function Core.Scan()
 		end
 	end
 
-	Core.entries, Core.pending = Logic.BuildEntries(records, hidden)
+	local db = Bagnon_CheapestDB
+	Core.entries, Core.pending = Logic.BuildEntries(records, hidden, db.anyQuality)
+	Core.buttonEntries = Logic.ButtonEntries(Core.entries, db.buttonMaxQuality)
 	if ns.UI then
 		ns.UI.Refresh()
 	end
@@ -301,11 +319,14 @@ SlashCmdList.BAGNONCHEAPEST = function(msg)
 	local cmd = (msg or ''):lower():match('^%s*(%S*)')
 	if cmd == 'scan' then
 		printScan()
+	elseif cmd == 'options' or cmd == 'config' then
+		if ns.Options then ns.Options.Open() end
 	elseif cmd == '' then
 		if ns.UI then ns.UI.TogglePanel() end
 	else
 		Core.Print('/bcheap - toggle the panel')
 		Core.Print('/bcheap scan - print the ranked list to chat')
+		Core.Print('/bcheap options - open the options')
 	end
 end
 
@@ -318,9 +339,17 @@ function events:PLAYER_LOGIN()
 	Bagnon_CheapestDB = Bagnon_CheapestDB or {}
 	Bagnon_CheapestDB.excluded = Bagnon_CheapestDB.excluded or {}
 	Bagnon_CheapestDB.names = Bagnon_CheapestDB.names or {}
+	for key, value in pairs(Core.DEFAULTS) do
+		if Bagnon_CheapestDB[key] == nil then
+			Bagnon_CheapestDB[key] = value
+		end
+	end
 
 	if ns.UI then
 		ns.UI.Init()
+	end
+	if ns.Options then
+		ns.Options.Init()
 	end
 
 	self:RegisterEvent('BAG_UPDATE_DELAYED')

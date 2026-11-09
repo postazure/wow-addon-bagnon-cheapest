@@ -18,6 +18,8 @@ known = {
     'AddLine', 'AddDoubleLine', 'SetOwner', 'IsOwned', 'SetBagItem', 'SetHyperlink',
     'Get', 'IsCached', 'Layout', 'GetExtraButtons',
     'GetBagAndSlot',
+    # Settings API objects (used the same way by NodeSight on Forever).
+    'SetValueChangedCallback', 'Add', 'GetData', 'GetID',
 }
 
 bad = []

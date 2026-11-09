@@ -149,13 +149,15 @@ test('ranking uses the cheapest stack, not the total', function()
 	eq(entries[1].value, 2)
 end)
 
-test('grey items always rank first, even when worth more', function()
-	local entries = Logic.BuildEntries({
-		rec{ itemID = 1, sellPrice = 1,   quality = 1, slot = 1 },
-		rec{ itemID = 2, sellPrice = 500, quality = 0, slot = 2 },
-		rec{ itemID = 3, sellPrice = 5,   quality = 2, slot = 3 },
-		rec{ itemID = 4, sellPrice = 50,  quality = 0, slot = 4 },
-	}, {})
+local mixed = {
+	rec{ itemID = 1, sellPrice = 1,   quality = 1, slot = 1 },
+	rec{ itemID = 2, sellPrice = 500, quality = 0, slot = 2 },
+	rec{ itemID = 3, sellPrice = 5,   quality = 2, slot = 3 },
+	rec{ itemID = 4, sellPrice = 50,  quality = 0, slot = 4 },
+}
+
+test('by default grey items rank first, even when worth more', function()
+	local entries = Logic.BuildEntries(mixed, {})
 	eq(entries[1].itemID, 4, 'cheapest grey')
 	eq(entries[2].itemID, 2, 'other grey')
 	eq(entries[3].itemID, 1, 'then cheapest non-grey')
@@ -168,6 +170,24 @@ test('unknown quality is not treated as grey', function()
 		rec{ itemID = 2, sellPrice = 9, quality = 0,   slot = 2 },
 	}, {})
 	eq(entries[1].itemID, 2)
+end)
+
+test('anyQuality ranks by stack value alone', function()
+	local entries = Logic.BuildEntries(mixed, {}, true)
+	eq(entries[1].itemID, 1, 'cheapest, a white item')
+	eq(entries[2].itemID, 3, 'a green worth less than any grey')
+	eq(entries[3].itemID, 4)
+	eq(entries[4].itemID, 2)
+end)
+
+test('button entries keep order and stop at the quality limit', function()
+	local entries = Logic.BuildEntries(mixed, {}, true)
+	local ids = function(list) local t = {} for i, e in ipairs(list) do t[i] = e.itemID end return table.concat(t, ',') end
+	eq(ids(Logic.ButtonEntries(entries, 0)), '4,2', 'Poor: greys only')
+	eq(ids(Logic.ButtonEntries(entries, 1)), '1,4,2', 'Common adds whites')
+	eq(ids(Logic.ButtonEntries(entries, 4)), '1,3,4,2', 'Epic: everything')
+	eq(ids(Logic.ButtonEntries(entries, nil)), '4,2', 'missing limit means Poor')
+	eq(#Logic.ButtonEntries({ { itemID = 9, quality = nil } }, 4), 0, 'unknown quality never offered')
 end)
 
 test('ties broken by name then item ID', function()

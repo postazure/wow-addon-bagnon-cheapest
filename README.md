@@ -6,6 +6,7 @@ A [Bagnon](https://www.curseforge.com/wow/addons/bagnon) plugin for WoW Forever.
 
 - Adds a button to Bagnon's bag window showing the item that would go next and its vendor price.
 - Grey items come first. After that, items are ranked by vendor price × stack size.
+- By default the button only offers grey items, so Shift-click is a quick way to clear junk. The list shows every quality.
 - Hovering shows the next four candidates and darkens every other slot, so the target stands out.
 - At a vendor it sells the stack instead of destroying it.
 - A list panel shows every candidate. Exclude anything you want to keep; exclusions are saved for all your characters.
@@ -17,11 +18,18 @@ A [Bagnon](https://www.curseforge.com/wow/addons/bagnon) plugin for WoW Forever.
 | Bag button | Click | Open or close the list |
 | Bag button | Shift-click | Destroy (or sell) the cheapest stack |
 | Bag button | Shift-right-click | Skip that item until you close your bags |
-| List | Left-click | Destroy (or sell) that stack |
+| List | Shift-click | Destroy (or sell) that stack |
 | List | Right-click | Exclude that item |
 | Excluded list | Right-click | Restore that item |
 
 `/bcheap` toggles the list, and `/bcheap scan` prints the ranking to chat.
+
+## Options
+
+Under **Options → AddOns → Bagnon Cheapest**, or `/bcheap options`:
+
+- **Cheapest first, any quality:** rank purely by vendor value instead of putting greys first. Off by default.
+- **Button shows up to:** the highest quality the bag button offers, from Poor to Epic. Poor by default.
 
 ## Safety
 

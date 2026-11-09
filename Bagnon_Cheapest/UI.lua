@@ -266,13 +266,20 @@ local button
 
 local function buttonOnEnter(self)
 	self.hovered = true
-	local entries = Core.entries
+	local entries = Core.buttonEntries
 	local entry = entries[1]
 	anchorTooltip(self)
 
 	if not entry then
 		GameTooltip:AddLine('Bagnon Cheapest', 1, 1, 1)
-		GameTooltip:AddLine(Core.pending > 0 and 'Item data still loading...' or 'Nothing with a vendor price.', 0.8, 0.8, 0.8)
+		if #Core.entries == 0 then
+			GameTooltip:AddLine(Core.pending > 0 and 'Item data still loading...' or 'Nothing with a vendor price.', 0.8, 0.8, 0.8)
+		else
+			local maxQuality = Bagnon_CheapestDB.buttonMaxQuality or 0
+			GameTooltip:AddLine(maxQuality == 0 and 'No grey items.'
+				or ('Nothing at ' .. Core.QualityName(maxQuality) .. '|cffcccccc quality or below.|r'), 0.8, 0.8, 0.8)
+			GameTooltip:AddLine('Change it with /bcheap options.', 0.8, 0.8, 0.8)
+		end
 		GameTooltip:AddLine(clickHint('|L Show list'), 0.5, 0.8, 1)
 		GameTooltip:Show()
 		return
@@ -315,14 +322,14 @@ end
 local function buttonOnClick(self, mouse)
 	if mouse == 'RightButton' then
 		if IsShiftKeyDown() then
-			Core.Skip(Core.entries[1])
+			Core.Skip(Core.buttonEntries[1])
 		end
 	elseif not IsShiftKeyDown() then
 		UI.TogglePanel()
 	elseif viewingOtherCharacter() then
 		Core.Print('Switch Bagnon back to your current character first.')
 	else
-		Core.Act(Core.entries[1])
+		Core.Act(Core.buttonEntries[1])
 	end
 end
 
@@ -352,7 +359,7 @@ end
 
 function UI.UpdateButton()
 	if not button then return end
-	local entry = Core.entries[1]
+	local entry = Core.buttonEntries[1]
 
 	if entry then
 		button.icon:SetTexture(entry.icon or EMPTY_ICON)
@@ -431,7 +438,7 @@ local function rowOnEnter(self)
 		GameTooltip:SetBagItem(e.bag, e.slot)
 		GameTooltip:AddLine(' ')
 		GameTooltip:AddDoubleLine('This stack (x' .. e.count .. ')', Core.Money(e.value), 1, 0.82, 0, 1, 1, 1)
-		addActionHint('|L')
+		addActionHint('|LS')
 		GameTooltip:AddLine(clickHint('|R Exclude this item forever'), 0.5, 0.8, 1)
 		UI.HighlightSlot(e.bag, e.slot)
 	end
@@ -456,6 +463,8 @@ local function rowOnClick(self, mouse)
 		end
 	elseif mouse == 'RightButton' then
 		Core.Exclude(entry)
+	elseif not IsShiftKeyDown() then
+		return
 	elseif viewingOtherCharacter() then
 		Core.Print('Switch Bagnon back to your current character first.')
 	else

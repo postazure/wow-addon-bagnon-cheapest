@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- New options under Options → AddOns → Bagnon Cheapest, or `/bcheap options`.
+- **Button shows up to:** the highest quality the bag button offers. The
+  default is Poor, so Shift-click only clears grey items. The list still
+  shows every quality.
+- The list now needs Shift-click to destroy or sell a stack, like the bag
+  button. A plain click does nothing.
+- **Cheapest first, any quality:** rank purely by vendor value instead of
+  putting grey items first. Off by default.
+
 ## 1.1.0
 
 - Shift-right-click the bag button to skip the item it shows. It comes back

@@ -10,3 +10,4 @@
 Logic.lua
 Core.lua
 UI.lua
+Options.lua

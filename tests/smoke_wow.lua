@@ -205,7 +205,32 @@ _G.Bagnon = {
 --[[ Load the addon like the client does ]]--
 
 local ns = {}
-for _, file in ipairs { 'Logic.lua', 'Core.lua', 'UI.lua' } do
+-- Blizzard Settings stub: records what the options page registers.
+local settings = { categories = {}, controls = {}, byKey = {} }
+_G.Settings = {
+	RegisterVerticalLayoutCategory = function(name)
+		local c = { name = name, GetID = function() return 'cat:' .. name end }
+		return c, {}
+	end,
+	RegisterAddOnCategory = function(c) settings.categories[#settings.categories + 1] = c end,
+	RegisterAddOnSetting = function(category, variable, key, tbl, vtype, name, default)
+		local s = { key = key, tbl = tbl, vtype = vtype, default = default }
+		function s:SetValueChangedCallback(f) self.onChange = f end
+		function s:SetValue(v) self.tbl[self.key] = v; if self.onChange then self.onChange(self, v) end end
+		settings.byKey[key] = s
+		return s
+	end,
+	CreateCheckbox = function(c, s) settings.controls[#settings.controls + 1] = { kind = 'checkbox', setting = s } end,
+	CreateDropdown = function(c, s, options) settings.controls[#settings.controls + 1] = { kind = 'dropdown', setting = s, options = options } end,
+	CreateControlTextContainer = function()
+		local data = {}
+		return { Add = function(self, value, label) data[#data + 1] = { value = value, label = label } end,
+		         GetData = function() return data end }
+	end,
+	OpenToCategory = function(id) settings.opened = id end,
+}
+
+for _, file in ipairs { 'Logic.lua', 'Core.lua', 'UI.lua', 'Options.lua' } do
 	local chunk = assert(loadstring(io.open('Bagnon_Cheapest/' .. file):read('*a'), '@' .. file))
 	chunk('Bagnon_Cheapest', ns)
 end
@@ -257,6 +282,57 @@ end)
 test('requested uncached item data', function()
 	eq(requested[500], true)
 	eq(ns.Core.pending, 1)
+end)
+
+test('options page registers a checkbox and a quality dropdown with grey-only defaults', function()
+	eq(#settings.categories, 1)
+	eq(settings.categories[1].name, 'Bagnon Cheapest')
+	eq(settings.controls[1].kind, 'checkbox'); eq(settings.controls[1].setting.key, 'anyQuality')
+	eq(settings.controls[2].kind, 'dropdown'); eq(settings.controls[2].setting.key, 'buttonMaxQuality')
+	eq(settings.byKey.anyQuality.default, false)
+	eq(settings.byKey.buttonMaxQuality.default, 0)
+	eq(settings.byKey.buttonMaxQuality.tbl, Bagnon_CheapestDB, 'saved in the account-wide DB')
+	local options = settings.controls[2].options()
+	eq(#options, 5); eq(options[1].value, 0); eq(options[5].value, 4)
+	eq(options[3].label:find('Uncommon', 1, true) ~= nil, true, options[3].label)
+	SlashCmdList.BAGNONCHEAPEST('options')
+	eq(settings.opened, 'cat:Bagnon Cheapest')
+end)
+
+test('default: the button only offers grey items; the list shows everything', function()
+	eq(Bagnon_CheapestDB.anyQuality, false); eq(Bagnon_CheapestDB.buttonMaxQuality, 0)
+	eq(#ns.Core.buttonEntries, 1); eq(ns.Core.buttonEntries[1].itemID, 100)
+	eq(#ns.Core.entries, 3)
+
+	Bagnon_CheapestDB.excluded[100] = true; ns.Core.Scan()
+	local b = _G.Bagnon_CheapestButton
+	eq(#ns.Core.buttonEntries, 0)
+	eq(b.icon.texture, 'Interface/Icons/INV_Misc_QuestionMark', 'no grey: empty button')
+	b.scripts.OnEnter(b)
+	eq(table.concat(GameTooltip.lines, ' '):find('No grey items', 1, true) ~= nil, true)
+	b.scripts.OnLeave(b); runTimers()
+	reset(); shift = true; b.scripts.OnClick(b); shift = false
+	eq(log.deleted, 0, 'shift-click with nothing grey does nothing')
+	Bagnon_CheapestDB.excluded[100] = nil; ns.Core.Scan()
+end)
+
+test('changing the options rescans: any-quality order, wider button limit', function()
+	items[500].uncached = nil; ns.Core.Scan()      -- a 1c white item, cheaper than the 6c grey
+	eq(ns.Core.entries[1].itemID, 100, 'default: grey first')
+
+	settings.byKey.anyQuality:SetValue(true)
+	eq(ns.Core.entries[1].itemID, 500, 'any quality: the 1c white first')
+	eq(ns.Core.buttonEntries[1].itemID, 100, 'button still limited to Poor')
+
+	settings.byKey.buttonMaxQuality:SetValue(1)
+	eq(ns.Core.buttonEntries[1].itemID, 500, 'Common limit: button offers the white')
+	for _, e in ipairs(ns.Core.buttonEntries) do eq(e.quality <= 1, true, 'no greens') end
+	eq(_G.Bagnon_CheapestButton.icon.texture, 'icon500')
+
+	settings.byKey.anyQuality:SetValue(false)
+	items[500].uncached = true
+	-- The remaining tests cover the button in general: let it offer every quality.
+	settings.byKey.buttonMaxQuality:SetValue(4)
 end)
 
 test('GET_ITEM_INFO_RECEIVED for a waited item triggers one batched rescan', function()
@@ -503,6 +579,11 @@ test('panel renders list, excluded view, right-click exclude and restore', funct
 	eq(panel.rows[4].shown, false)
 
 	local id = row.entry.itemID
+	reset(); row.scripts.OnClick(row, 'LeftButton')
+	eq(log.deleted, 0, 'plain left-click on a row does nothing')
+	eq(log.popup, nil, 'plain left-click asks nothing')
+	eq(cursor, nil, 'plain left-click picks nothing up')
+
 	row.scripts.OnClick(row, 'RightButton')
 	eq(Bagnon_CheapestDB.excluded[id], true)
 

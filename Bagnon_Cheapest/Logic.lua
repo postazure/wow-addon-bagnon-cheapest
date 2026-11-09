@@ -50,19 +50,23 @@ local function cheaper(a, b)
 	return a.slot < b.slot
 end
 
--- Grey items first, then by stack value.
-local function entryOrder(a, b)
-	local ag, bg = a.quality == 0, b.quality == 0
-	if ag ~= bg then return ag end
+local function byValue(a, b)
 	if a.value ~= b.value then return a.value < b.value end
 	local an, bn = a.name or '', b.name or ''
 	if an ~= bn then return an < bn end
 	return a.itemID < b.itemID
 end
 
+local function greyFirst(a, b)
+	local ag, bg = a.quality == 0, b.quality == 0
+	if ag ~= bg then return ag end
+	return byValue(a, b)
+end
+
 -- One entry per item ID: its cheapest stack plus the number of stacks.
+-- Grey items come first unless anyQuality is set.
 -- Also returns how many records were skipped while their item data loads.
-function Logic.BuildEntries(records, excluded)
+function Logic.BuildEntries(records, excluded, anyQuality)
 	local byItem, pending = {}, 0
 
 	for _, rec in ipairs(records or {}) do
@@ -93,8 +97,20 @@ function Logic.BuildEntries(records, excluded)
 	for _, entry in pairs(byItem) do
 		entries[#entries + 1] = entry
 	end
-	sort(entries, entryOrder)
+	sort(entries, anyQuality and byValue or greyFirst)
 	return entries, pending
+end
+
+-- The entries the bag button may offer: quality at or below maxQuality.
+-- Unknown quality only passes when every quality does.
+function Logic.ButtonEntries(entries, maxQuality)
+	local out = {}
+	for _, e in ipairs(entries) do
+		if (e.quality or math.huge) <= (maxQuality or 0) then
+			out[#out + 1] = e
+		end
+	end
+	return out
 end
 
 function Logic.Slice(entries, first, n)
