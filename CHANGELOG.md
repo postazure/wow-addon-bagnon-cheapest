@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Clearer option names. "Button shows up to" is now **Button picks from**,
+  with choices like "Poor (junk only)" and "Common and below".
+  "Cheapest first, any quality" is now **Grey items first**, which works the
+  other way round: on by default, and off to rank by vendor value alone.
+  Your current choice carries over.
+- The button and list now work in combat. Destroying is allowed; selling at a
+  vendor still waits until combat ends.
+
 ## 1.2.0
 
 ### New

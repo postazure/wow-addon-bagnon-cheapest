@@ -9,13 +9,13 @@ Bagnon Cheapest adds a button to your Bagnon bag window that finds your lowest-v
 - Exclusions are shared across all your characters.
 
 **Options** (Options → AddOns, or `/bcheap options`)
-- The button offers grey items only by default. Raise its quality limit up to Epic.
-- Rank purely by vendor value instead of putting greys first.
+- **Button picks from:** grey junk only by default. Let it pick white, green and better items too.
+- **Grey items first:** on by default. Turn it off to rank everything by vendor value alone.
 
 **Safe by default**
 - The slot is checked again before anything happens.
 - Uncommon and better items always ask for Blizzard's "type DELETE" confirmation.
-- Never acts in combat. Quest items and items with no sell price are never listed.
+- Works in combat; only selling waits until combat ends. Quest items and items with no sell price are never listed.
 
 **Commands:** `/bcheap` opens the list, `/bcheap scan` prints the ranking to chat, and `/bcheap options` opens the options.
 

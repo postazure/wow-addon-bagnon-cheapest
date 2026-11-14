@@ -55,12 +55,17 @@ local function actionVerb()
 	return Core.VendorState() == 'sell' and 'Sell' or 'Destroy'
 end
 
+-- Only selling is blocked in combat; destroying still works.
+local function sellBlocked()
+	return UI.inCombat and Core.VendorState() == 'sell'
+end
+
 local function addActionHint(markup)
 	local vendor = Core.VendorState()
 	if viewingOtherCharacter() then
 		GameTooltip:AddLine('Viewing another character: disabled.', 1, 0.3, 0.3)
-	elseif UI.inCombat then
-		GameTooltip:AddLine('In combat: disabled.', 1, 0.3, 0.3)
+	elseif sellBlocked() then
+		GameTooltip:AddLine('In combat: selling disabled.', 1, 0.3, 0.3)
 	elseif vendor == 'buyback' then
 		GameTooltip:AddLine('Vendor is on Buyback: switch to the Merchant tab to sell.', 1, 0.82, 0)
 	else
@@ -369,7 +374,7 @@ function UI.UpdateButton()
 		button.icon:SetTexture(EMPTY_ICON)
 		button.price:SetText('')
 	end
-	button.icon:SetDesaturated(not entry or UI.inCombat)
+	button.icon:SetDesaturated(not entry or sellBlocked())
 
 	if button.hovered then
 		buttonOnEnter(button)
@@ -621,7 +626,7 @@ local function render()
 				row.stacks:SetText(entry.stacks > 1 and ('x' .. entry.stacks .. ' stacks') or '')
 				row.price:SetText(Core.Money(entry.value))
 			end
-			row.icon:SetDesaturated(not UI.showExcluded and UI.inCombat)
+			row.icon:SetDesaturated(not UI.showExcluded and sellBlocked())
 			row:Show()
 			if row.hovered then
 				rowOnEnter(row)
@@ -648,8 +653,8 @@ local function render()
 		local skipped = 0
 		for _ in pairs(Core.skipped) do skipped = skipped + 1 end
 		if skipped > 0 then footer = footer .. ', ' .. skipped .. ' skipped' end
-		if UI.inCombat then
-			footer = footer .. '  |cffff5555In combat: disabled|r'
+		if sellBlocked() then
+			footer = footer .. '  |cffff5555In combat: selling disabled|r'
 		elseif Core.VendorState() == 'sell' then
 			footer = footer .. '  |cff55ff55At vendor: clicks sell|r'
 		end

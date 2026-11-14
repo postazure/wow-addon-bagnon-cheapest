@@ -284,19 +284,34 @@ test('requested uncached item data', function()
 	eq(ns.Core.pending, 1)
 end)
 
-test('options page registers a checkbox and a quality dropdown with grey-only defaults', function()
+test('options page registers a quality dropdown and a grey-first checkbox with grey-only defaults', function()
 	eq(#settings.categories, 1)
 	eq(settings.categories[1].name, 'Bagnon Cheapest')
-	eq(settings.controls[1].kind, 'checkbox'); eq(settings.controls[1].setting.key, 'anyQuality')
-	eq(settings.controls[2].kind, 'dropdown'); eq(settings.controls[2].setting.key, 'buttonMaxQuality')
-	eq(settings.byKey.anyQuality.default, false)
+	eq(settings.controls[1].kind, 'dropdown'); eq(settings.controls[1].setting.key, 'buttonMaxQuality')
+	eq(settings.controls[2].kind, 'checkbox'); eq(settings.controls[2].setting.key, 'greyFirst')
+	eq(settings.byKey.greyFirst.default, true)
+	eq(Bagnon_CheapestDB.greyFirst, true, 'on for a new install')
 	eq(settings.byKey.buttonMaxQuality.default, 0)
 	eq(settings.byKey.buttonMaxQuality.tbl, Bagnon_CheapestDB, 'saved in the account-wide DB')
-	local options = settings.controls[2].options()
+	local options = settings.controls[1].options()
 	eq(#options, 5); eq(options[1].value, 0); eq(options[5].value, 4)
+	eq(options[1].label:find('junk only', 1, true) ~= nil, true, options[1].label)
 	eq(options[3].label:find('Uncommon', 1, true) ~= nil, true, options[3].label)
+	eq(options[3].label:find('and below', 1, true) ~= nil, true, options[3].label)
 	SlashCmdList.BAGNONCHEAPEST('options')
 	eq(settings.opened, 'cat:Bagnon Cheapest')
+end)
+
+test('an existing "Cheapest first, any quality" choice carries over as grey-first off', function()
+	local db = Bagnon_CheapestDB
+	db.greyFirst, db.anyQuality = nil, true
+	ns.Options.category = nil
+	ns.Options.Init()
+	eq(db.greyFirst, false)
+	eq(db.anyQuality, true, 'ranking unchanged')
+	settings.byKey.greyFirst:SetValue(true)
+	eq(db.anyQuality, false)
+	eq(ns.Core.entries[1].itemID, 100, 'grey first again')
 end)
 
 test('default: the button only offers grey items; the list shows everything', function()
@@ -320,7 +335,7 @@ test('changing the options rescans: any-quality order, wider button limit', func
 	items[500].uncached = nil; ns.Core.Scan()      -- a 1c white item, cheaper than the 6c grey
 	eq(ns.Core.entries[1].itemID, 100, 'default: grey first')
 
-	settings.byKey.anyQuality:SetValue(true)
+	settings.byKey.greyFirst:SetValue(false)
 	eq(ns.Core.entries[1].itemID, 500, 'any quality: the 1c white first')
 	eq(ns.Core.buttonEntries[1].itemID, 100, 'button still limited to Poor')
 
@@ -329,7 +344,7 @@ test('changing the options rescans: any-quality order, wider button limit', func
 	for _, e in ipairs(ns.Core.buttonEntries) do eq(e.quality <= 1, true, 'no greens') end
 	eq(_G.Bagnon_CheapestButton.icon.texture, 'icon500')
 
-	settings.byKey.anyQuality:SetValue(false)
+	settings.byKey.greyFirst:SetValue(true)
 	items[500].uncached = true
 	-- The remaining tests cover the button in general: let it offer every quality.
 	settings.byKey.buttonMaxQuality:SetValue(4)
@@ -537,14 +552,15 @@ test('aborts when cursor already holds an item', function()
 	cursor = nil
 end)
 
-test('aborts in combat', function()
+test('destroys in combat', function()
 	reset()
 	combat = true
 	fire('PLAYER_REGEN_DISABLED')
-	eq(ns.Core.Destroy(ns.Core.entries[1]), false)
-	eq(log.deleted, 0)
+	eq(ns.Core.Destroy(ns.Core.entries[1]), true)
+	eq(log.deleted, 1)
 	combat = false
 	fire('PLAYER_REGEN_ENABLED')
+	fill(); ns.Core.Scan()
 end)
 
 test('uncommon item goes through Blizzard DELETE_GOOD_ITEM prompt, not direct delete', function()

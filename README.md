@@ -28,14 +28,14 @@ A [Bagnon](https://www.curseforge.com/wow/addons/bagnon) plugin for WoW Forever.
 
 Under **Options → AddOns → Bagnon Cheapest**, or `/bcheap options`:
 
-- **Cheapest first, any quality:** rank purely by vendor value instead of putting greys first. Off by default.
-- **Button shows up to:** the highest quality the bag button offers, from Poor to Epic. Poor by default.
+- **Button picks from:** which items the bag button (and its Shift-click) may pick. The default, *Poor (junk only)*, means grey items only. Pick *Common and below*, *Uncommon and below* and so on to let it pick better items too. The list always shows every quality.
+- **Grey items first:** on by default, so grey junk always comes first and everything else follows by vendor value. Turn it off to rank everything by vendor value alone.
 
 ## Safety
 
 - The slot is checked again before anything happens. If the item or stack size changed, nothing is done.
 - Uncommon and better items always go through Blizzard's "type DELETE" confirmation.
-- Nothing happens in combat or while your cursor is holding an item.
+- Works in combat (destroying only; selling waits until combat ends). Nothing happens while your cursor is holding an item.
 - Quest items and items with no sell price are never listed.
 - Selling skips items that can still be refunded. Anything sold can be bought back from the vendor.
 

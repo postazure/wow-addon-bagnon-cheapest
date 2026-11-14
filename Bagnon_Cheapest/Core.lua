@@ -201,8 +201,9 @@ local function precheck(entry, verb)
 	if not entry then
 		return nil
 	end
-	if InCombatLockdown() then
-		Core.Print(('Not %sing items in combat.'):format(verb))
+	-- Destroying (pick up + delete) is allowed in combat; selling uses UseContainerItem, which isn't.
+	if verb == 'sell' and InCombatLockdown() then
+		Core.Print('Not selling items in combat.')
 		return nil
 	end
 	if CursorHasItem() then
